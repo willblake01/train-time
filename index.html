@@ -5,13 +5,12 @@
 	<title>Train Scheduler</title>
 
 	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
+
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-	<!-- Latest compiled and minified JavaScript -->
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-	<script src="assets/javascript/app.js"></script>
 
 </head>
 <body>
@@ -23,16 +22,32 @@
 
     <!-- Jumbotron -->
     <div class="jumbotron" id="jumbotron">
-      <h1 class="text-center">Anytime is Train Time!</h1>
+      <h1 class="text-center">If not now, Train!</h1>
       <br>
       <h3 class="text-center">Choo choo, chee chee</h3>
     </div>
 
-    <div class="row">
+	<div class="row">
+
+    <!-- Most Recent Train Panel -->
+    <div class="col-lg-6">
+      <div class="panel panel">
+        <div class="panel-heading">
+          <h3 class="panel-title">Current Train Schedule</h3>
+        </div>
+        <div class="panel-body">
+          <h2 id="train-display"></h2>
+          <h4 id="destination-display"></h4>
+          <h4 id="first-train-time-display"></h4>
+          <p id="frequency-display"></p>
+        </div>
+      </div>
+    </div>
+
 		<!-- Add train Panel-->
       <div class="col-lg-6">
-        <div class="panel panel-default">
-          <div class="panel-heading" id="panel">
+        <div class="panel panel">
+          <div class="panel-heading">
             <h3 class="panel-title">Add Train</h3>
           </div>
           <div class="panel-body">
@@ -56,7 +71,7 @@
                 <label for="frequency-input">Frequency (min)</label>
                 <input class="form-control" id="frequency-input" type="time">
               </div>
-              <button class="btn btn-default" id="add-train" type="submit">Submit</button>
+              <button class="btn btn" id="add-train" type="submit">Submit</button>
             </form>
 
           </div>
@@ -65,8 +80,14 @@
 
       </div>
 	</div>
+
+	<script src="https://www.gstatic.com/firebasejs/4.8.0/firebase.js"></script>
 	
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script src="assets/javascript/app.js"></script>
 
 </body>
 </html>

@@ -3,10 +3,17 @@
 	box-sizing: border-box;
 }
 
-#panel {
-	background-color: #66ffff;
+#jumbotron {
+	background-color: brown;
+	color: white;
 }
 
-#jumbotron {
-	background-color: #66ffff;
+.panel-heading {
+	background-color: #427AB2;
+	color: white;
+}
+
+#add-train {
+	background-color: #427AB2;
+	color: white;
 }
