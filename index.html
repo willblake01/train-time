@@ -16,7 +16,7 @@
 <body>
 	<script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
 
-	<div class="container">
+<div class="container">
 
 		<br>
 
@@ -29,32 +29,33 @@
 
 	<div class="row">
 
-    <!-- Most Recent Train Panel -->
-    <div class="col-lg-6">
-      <div class="panel panel">
-        <div class="panel-heading">
-          <h3 class="panel-title">Current Train Schedule</h3>
-        </div>
-        <div class="panel-body">
-          <!-- Table -->
-  			<table style="width:100%" class="table" id="train-table">
-    			<tr>
-    				<th>Train Name</th>
-    				<th>Destination</th> 
-    				<th>Frequency (min)</th>
-    				<th>Next Arrival</th>
-    				<th>Minutes Away</th>
-  				</tr>
-  				<tr>
-    				<td id="train-display"></td>
-    				<td id="destination-display"></td> 
-    				<td id="frequency-display"></td>
-    				<td id="first-train-time-display"></td>
-    				<td>Minutes Away</td>
-  				</tr>
-  			</table>
-      </div>
-    </div>
+    	<!-- Most Recent Train Panel -->
+    	<div class="col-lg-6">
+      	<div class="panel panel">
+        	<div class="panel-heading">
+          	<h3 class="panel-title">Current Train Schedule</h3>
+        	</div>
+        	<div class="panel-body">
+          	<!-- Table -->
+  				<table style="width:100%" class="table" id="train-table">
+    				<tr>
+    					<th>Train Name</th>
+    					<th>Destination</th> 
+    					<th>Frequency (min)</th>
+    					<th>Next Arrival</th>
+    					<th>Minutes Away</th>
+  					</tr>
+  					<tr>
+    					<td id="train-display"></td>
+    					<td id="destination-display"></td> 
+    					<td id="frequency-display"></td>
+    					<td id="first-train-time-display"></td>
+    					<td id="minutes-away"></td>
+  					</tr>
+  				</table>
+      		</div>
+      	</div>
+    	</div>
 
 		<!-- Add train Panel-->
       <div class="col-lg-6">
@@ -90,8 +91,8 @@
 
         </div>
 
-      </div>
-	</div>
+     </div>
+</div>
 
 	<script src="https://www.gstatic.com/firebasejs/4.8.0/firebase.js"></script>
 	
