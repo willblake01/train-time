@@ -3,3 +3,10 @@
 	box-sizing: border-box;
 }
 
+#panel {
+	background-color: #66ffff;
+}
+
+#jumbotron {
+	background-color: #66ffff;
+}
