@@ -73,7 +73,7 @@ $(document).ready(function() {
       console.log(sv.minutesAway);
 
       // Change the HTML to reflect new train data
-      $("#train-table").prepend("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + sv.nextTrain + "</td>" + "<td>" + sv.minutesAway + "</td>" + "</tr>");
+      $("#table-body").prepend("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + sv.nextTrain + "</td>" + "<td>" + sv.minutesAway + "</td>" + "</tr>");
 
       // Handle the errors
     }, function(errorObject) {

@@ -17,3 +17,7 @@
 	background-color: #427AB2;
 	color: white;
 }
+
+#table-head {
+	position: relative;
+}
