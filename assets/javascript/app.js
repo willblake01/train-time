@@ -36,6 +36,15 @@ $(document).ready(function() {
       $("#first-train-time-input").val("");
       $("#frequency-input").val("");
 
+      // Calculate next arrival time and minutes away using moment.js
+      var firstTrainTimeConverted = moment(firstTrainTime, "hh:mm").subtract(1, "years");
+      var currentTime = moment();
+      var diffTime = moment().diff(moment(firstTrainTimeConverted), "minutes");
+      var tRemainder = diffTime % frequency;
+      var minutesAway = frequency - tRemainder;
+      var nextArrival = moment().add(minutesAway, "minutes");
+      var nextTrain = moment(nextArrival).format("hh:mm A");
+
 
       // Code for handling the push
       database.ref().push({
@@ -43,6 +52,8 @@ $(document).ready(function() {
         destination: destination,
         firstTrainTime: firstTrainTime,
         frequency: frequency,
+        nextTrain: nextTrain,
+        minutesAway: minutesAway,
         dateAdded: firebase.database.ServerValue.TIMESTAMP
       });
 
@@ -58,18 +69,11 @@ $(document).ready(function() {
       console.log(sv.destination);
       console.log(sv.firstTrainTime);
       console.log(sv.frequency);
-
-      // Calculate next arrival time and minutes away using moment.js
-      var firstTrainTimeConverted = moment(firstTrainTime, "hh:mm").subtract(1, "years");
-      var currentTime = moment();
-      var diffTime = moment().diff(moment(firstTrainTimeConverted), "minutes");
-      var tRemainder = diffTime % frequency;
-      var minutesAway = frequency - tRemainder;
-      var nextArrival = moment().add(minutesAway, "minutes");
-      var nextTrain = moment(nextArrival).format("hh:mm A");
+      console.log(sv.nextTrain);
+      console.log(sv.minutesAway);
 
       // Change the HTML to reflect new train data
-      $("#train-table").append("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + nextTrain + "</td>" + "<td>" + minutesAway + "</td>" + "</tr>");
+      $("#train-table").prepend("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + sv.nextTrain + "</td>" + "<td>" + sv.minutesAway + "</td>" + "</tr>");
 
       // Handle the errors
     }, function(errorObject) {
