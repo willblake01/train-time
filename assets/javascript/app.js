@@ -59,8 +59,17 @@ $(document).ready(function() {
       console.log(sv.firstTrainTime);
       console.log(sv.frequency);
 
+      // Calculate next arrival time and minutes away using moment.js
+      var firstTrainTimeConverted = moment(firstTrainTime, "hh:mm").subtract(1, "years");
+      var currentTime = moment();
+      var diffTime = moment().diff(moment(firstTrainTimeConverted), "minutes");
+      var tRemainder = diffTime % frequency;
+      var minutesAway = frequency - tRemainder;
+      var nextArrival = moment().add(minutesAway, "minutes");
+      var nextTrain = moment(nextArrival).format("hh:mm A");
+
       // Change the HTML to reflect new train data
-      $("#train-table").append("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + "nextArrival" + "</td>" + "<td>" + "minutesAway" + "</td>" + "</tr>");
+      $("#train-table").append("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + nextTrain + "</td>" + "<td>" + minutesAway + "</td>" + "</tr>");
 
       // Handle the errors
     }, function(errorObject) {
