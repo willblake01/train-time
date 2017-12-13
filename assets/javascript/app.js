@@ -45,7 +45,6 @@ $(document).ready(function() {
       var nextArrival = moment().add(minutesAway, "minutes");
       var nextTrain = moment(nextArrival).format("hh:mm A");
 
-
       // Code for handling the push
       database.ref().push({
         trainName: trainName,
