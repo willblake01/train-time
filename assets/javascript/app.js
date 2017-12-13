@@ -60,7 +60,7 @@ $(document).ready(function() {
       console.log(sv.frequency);
 
       // Change the HTML to reflect new train data
-      $("#train-table").prepend("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + "nextArrival" + "</td>" + "<td>" + "minutesAway" + "</td>" + "</tr>");
+      $("#train-table").append("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + "nextArrival" + "</td>" + "<td>" + "minutesAway" + "</td>" + "</tr>");
 
       // Handle the errors
     }, function(errorObject) {
