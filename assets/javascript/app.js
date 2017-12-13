@@ -49,7 +49,7 @@ $(document).ready(function() {
     });
 
     // Firebase watcher + initial loader + order/limit HINT: .on("child_added"
-    database.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function(snapshot) {
+    database.ref().orderByChild("dateAdded").limitToLast(10).on("child_added", function(snapshot) {
       // storing the snapshot.val() in a variable for convenience
       var sv = snapshot.val();
 
@@ -59,11 +59,8 @@ $(document).ready(function() {
       console.log(sv.firstTrainTime);
       console.log(sv.frequency);
 
-      // Change the HTML to reflect
-      $("#train-display").text(sv.trainName);
-      $("#destination-display").text(sv.destination);
-      $("#first-train-time-display").text(sv.firstTrainTime);
-      $("#frequency-display").text(sv.frequency);
+      // Change the HTML to reflect new train data
+      $("#train-table").prepend("<tr>" + "<td>" + sv.trainName + "</td>" + "<td>" + sv.destination + "</td>" + "<td>" + sv.frequency + "</td>" + "<td>" + "nextArrival" + "</td>" + "<td>" + "minutesAway" + "</td>" + "</tr>");
 
       // Handle the errors
     }, function(errorObject) {
