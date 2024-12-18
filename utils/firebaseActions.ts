@@ -5,7 +5,7 @@ import { getDatabase, onValue, push, ref, remove, set } from "firebase/database"
 
  // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-console.log('firebaseConfig', firebaseConfig)
+
 // Initialize Realtime Database and get a reference to the service
 const db = getDatabase();
 
