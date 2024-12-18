@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { fetchRoutes, deleteRoute } from '../../../utils/firebaseActions';
+import { fetchRoutes, deleteRoute } from '../utils/firebaseActions';
 import { Box, Button, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 

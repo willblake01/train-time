@@ -2,7 +2,7 @@ import React from 'react';
 import firebase from "firebase/compat/app";
 import moment from 'moment';
 import { Box, Button, Card, CardContent, CardHeader, TextField } from '@mui/material';
-import { addRoute } from '../../../utils/firebaseActions';
+import { addRoute } from '../utils/firebaseActions';
 
 const AddRoute = () => {
   interface FormElements extends HTMLFormControlsCollection {

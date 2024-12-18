@@ -1,7 +1,7 @@
 import React from 'react';
 import '../styles/global.css';
 import Head from 'next/head';
-import Landing from './Landing/Landing';
+import Landing from './Landing';
 
 const App = () => (
   <>
