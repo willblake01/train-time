@@ -18,7 +18,6 @@ export const fetchRoutes = ({ setSchedule }) => {
     const database = snapshot.val() || []
     const schedule = Object.values(database)
     setSchedule(schedule)
-    console.log('schedule', schedule)
   }, (errorObject) => {
     console.log("Errors handled: " + errorObject)
   })
