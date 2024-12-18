@@ -5,7 +5,7 @@ import { getDatabase, onValue, push, ref, remove, set } from "firebase/database"
 
  // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-
+console.log('firebaseConfig', firebaseConfig)
 // Initialize Realtime Database and get a reference to the service
 const db = getDatabase();
 
@@ -17,7 +17,8 @@ export const fetchRoutes = ({ setSchedule }) => {
   onValue(routesRef, (snapshot) => {
     const database = snapshot.val() || []
     const schedule = Object.values(database)
-    setSchedule(schedule) 
+    setSchedule(schedule)
+    console.log('schedule', schedule)
   }, (errorObject) => {
     console.log("Errors handled: " + errorObject)
   })

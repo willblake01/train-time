@@ -29,7 +29,7 @@ const calculateMinutesAwayNextArrival = (route: Route) => {
 
 const Schedule = () => {
   const [schedule, setSchedule] = useState([]);
-  
+
   useEffect(() => {
     const firebaseData = fetchRoutes({setSchedule})
     setSchedule(firebaseData)
