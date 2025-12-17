@@ -1,8 +1,8 @@
 import React from 'react';
-import firebase from "firebase/compat/app";
+import { serverTimestamp } from 'firebase/database';
 import moment from 'moment';
 import { Box, Button, Card, CardContent, CardHeader, TextField } from '@mui/material';
-import { addRoute } from '../utils/firebaseActions';
+import { addRoute } from '../utils/firebaseActions.ts';
 
 const AddRoute = () => {
   interface FormElements extends HTMLFormControlsCollection {
@@ -27,6 +27,7 @@ const AddRoute = () => {
     const tRemainder = diffTime % frequency;
     const minutesAway = frequency - tRemainder;
     const nextArrival = moment().add(minutesAway, "minutes").format("hh:mm A");
+
     const newRoute = {
       name: e.currentTarget.elements.nameInput.value,
       destination: e.currentTarget.elements.destinationInput.value,
@@ -34,8 +35,9 @@ const AddRoute = () => {
       frequency,
       minutesAway,
       nextArrival,
-      timeAdded: firebase.database.ServerValue.TIMESTAMP
+      timeAdded: serverTimestamp()
     };
+
     addRoute(newRoute);
     
     (e.target as HTMLFormElement).reset();
@@ -44,7 +46,7 @@ const AddRoute = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       <Card sx={{ borderRadius: '25px' }}>
-        <CardHeader align='center' title="Add Route" titleTypographyProps={{ fontFamily: 'Train One',
+        <CardHeader align='center' title="Add Route" slotProps={{ fontFamily: 'Train One',
         fontWeight: '400',
         fontStyle: 'normal'
       }} />

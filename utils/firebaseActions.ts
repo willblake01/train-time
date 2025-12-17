@@ -1,19 +1,18 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/database";
-import { firebaseConfig } from "./firebaseConfig";
+import { initializeApp } from 'firebase/app'
+import { firebaseConfig } from "./firebaseConfig.ts";
 import { getDatabase, onValue, push, ref, remove, set } from "firebase/database";
 
  // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
 // Initialize Realtime Database and get a reference to the service
-const db = getDatabase();
+const database = getDatabase(app);
 
 export const fetchRoutes = ({ setSchedule }) => {
   let schedule: Object[] = []
 
   // Read data from Firebase
-  const routesRef = ref(db, 'routes/')
+  const routesRef = ref(database, 'routes/')
   onValue(routesRef, (snapshot) => {
     const database = snapshot.val() || []
     const schedule = Object.values(database)
@@ -38,7 +37,7 @@ export const fetchRoutes = ({ setSchedule }) => {
 export const addRoute = (newRoute: AddRouteProps) => {
   const { name, destination, firstService, frequency, nextArrival, minutesAway, timeAdded } = newRoute
 
-  const postListRef = ref(db, 'routes');
+  const postListRef = ref(database, 'routes');
   const newPostRef = push(postListRef);
 
     const postData = {
@@ -56,6 +55,6 @@ export const addRoute = (newRoute: AddRouteProps) => {
 }
 
 export const deleteRoute = (id: String): void => {
-  const routesRef = ref(db, 'routes/' + id)
+  const routesRef = ref(database, 'routes/' + id)
   remove(routesRef)
 }

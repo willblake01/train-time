@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { fetchRoutes, deleteRoute } from '../utils/firebaseActions';
+import { fetchRoutes, deleteRoute } from '../utils/firebaseActions.ts';
 import { Box, Button, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { Delete as DeleteIcon } from '@mui/icons-material'
 
 interface Route {
   id: string;
@@ -32,13 +32,14 @@ const Schedule = () => {
 
   useEffect(() => {
     const firebaseData = fetchRoutes({setSchedule})
+    
     setSchedule(firebaseData)
   }, [])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       <Card sx={{ borderRadius: '25px' }}>
-      <CardHeader align='center' title="Schedule" titleTypographyProps={{
+      <CardHeader align='center' title="Schedule" slotProps={{
         fontFamily: 'Train One',
         fontWeight: '400',
         fontStyle: 'normal'

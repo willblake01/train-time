@@ -1,7 +1,7 @@
 import React from 'react';
-import Jumbotron from '../components/Jumbotron';
-import Schedule from '../components/Schedule';
-import AddRoute from '../components/AddRoute';
+import Jumbotron from '../components/Jumbotron.tsx';
+import Schedule from '../components/Schedule.tsx';
+import AddRoute from '../components/AddRoute.tsx';
 import { Box, Grid2 } from '@mui/material';
 
 const Landing = () => (
