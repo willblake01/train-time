@@ -6,7 +6,7 @@
 ![Stars](https://img.shields.io/github/stars/willblake01/train-time?style=social)
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
 
-![The Simpsons TV show](https://res.cloudinary.com/willblake01/image/upload/v1734560561/train-time.png)
+![Train Time](https://res.cloudinary.com/willblake01/image/upload/v1770242732/portfolio/train-time.webp)
 
 **Train Time** is a real-time train scheduling web application built with a **production-oriented React/Next.js-style architecture**. The project emphasizes clean separation of concerns, predictable data flow, and extensibility — showcasing senior-level frontend engineering fundamentals rather than demo-only code.
 
