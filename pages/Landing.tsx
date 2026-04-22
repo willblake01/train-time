@@ -13,7 +13,7 @@ const Landing = () => (
       position: 'absolute',
       zIndex: -1,
       display: 'flex',
-      backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/2/2f/Amtrak_Auto_Train_52_Passing_Through_Guinea_Station%2C_Virginia.jpg')",
+      backgroundImage: "url('https://res.cloudinary.com/willblake01/image/upload/q_auto/f_auto/v1776874034/train-time/train.webp')",
       backgroundSize: 'cover',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
