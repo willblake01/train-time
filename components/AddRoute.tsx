@@ -2,7 +2,7 @@ import React from 'react';
 import { serverTimestamp } from 'firebase/database';
 import moment from 'moment';
 import { Box, Button, Card, CardContent, CardHeader, TextField } from '@mui/material';
-import { addRoute } from '../utils/firebaseActions.ts';
+import { addRoute } from '../utils/firebaseActions';
 
 const AddRoute = () => {
   interface FormElements extends HTMLFormControlsCollection {

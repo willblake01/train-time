@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { firebaseConfig } from "./firebaseConfig.ts";
+import { firebaseConfig } from "./firebaseConfig";
 import { getDatabase, onValue, push, ref, remove, set } from "firebase/database";
 
  // Initialize Firebase

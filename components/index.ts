@@ -1,3 +1,3 @@
-export { default as AddRoute } from './AddRoute.tsx'
-export { default as Jumbotron } from './Jumbotron.tsx'
-export { default as Schedule } from './Schedule.tsx'
+export { default as AddRoute } from './AddRoute'
+export { default as Jumbotron } from './Jumbotron'
+export { default as Schedule } from './Schedule'
