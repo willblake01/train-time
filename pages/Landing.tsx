@@ -1,6 +1,6 @@
 import React from 'react';
 import { AddRoute, Jumbotron, Schedule } from '../components';
-import { Box, Grid2 } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 
 const Landing = () => (
   <Box sx={{
@@ -21,17 +21,17 @@ const Landing = () => (
       filter: 'blur(4px)',
     }}></Box>
     <Box sx={{ flexGrow: 1, p: 2 }}>
-      <Grid2 container spacing={2}>
-      <Grid2 size={12}>
+      <Grid container spacing={2}>
+      <Grid size={12}>
         <Jumbotron />
-      </Grid2>
-      <Grid2 size={8}>
+      </Grid>
+        <Grid size={{ xs: 12, md: 8 }}>
         <Schedule />
-      </Grid2>
-      <Grid2 size={4}>
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AddRoute />
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   </Box>
   </Box>
 ) 
