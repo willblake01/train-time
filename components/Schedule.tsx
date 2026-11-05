@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { fetchRoutes, deleteRoute } from '../utils/firebaseActions';
-import { Box, Button, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow } from '@mui/material';
+import { deleteRoute, subscribeToRoutes } from '../utils/firebaseActions';
+import { Box, Button, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TableRow } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material'
 
 interface Route {
@@ -28,13 +28,12 @@ const calculateMinutesAwayNextArrival = (route: Route) => {
 }
 
 const Schedule = () => {
-  const [schedule, setSchedule] = useState([]);
+  const [schedule, setSchedule] = useState<Route[]>([]);
 
   useEffect(() => {
-    const firebaseData = fetchRoutes({setSchedule})
-    
-    setSchedule(firebaseData)
-  }, [])
+    const unsubscribe = subscribeToRoutes(setSchedule);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
