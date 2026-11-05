@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Chip,
   Table,
   TableBody,
   TableCell,
@@ -17,28 +16,11 @@ import {
   TableRow,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import TrainStatusChip from './TrainStatusChip';
 
 const LiveStatusChip = ({ trainNum }: { trainNum: string }) => {
   const [train] = useLiveStatus(trainNum);
-  if (!train) return <Chip size="small" label="No live data" />;
-
-  const stop = train.nextStop;
-  if (!stop) return <Chip size="small" label={train.state} />;
-
-  const eta = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: stop.tz,
-  }).format(new Date(stop.estimated));
-  const late = stop.delayMinutes;
-
-  return (
-      <Chip
-          size="small"
-          color={late > 5 ? 'warning' : 'success'}
-          label={`${stop.name} ${eta} · ${late > 0 ? `${late} min late` : 'on time'}`}
-      />
-  );
+  return <TrainStatusChip train={train} />;
 };
 
 const Schedule = () => {

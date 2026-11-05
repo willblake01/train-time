@@ -1,3 +1,5 @@
 export { default as AddRoute } from './AddRoute'
+export { default as DepartureBoard } from './DepartureBoard'
 export { default as Jumbotron } from './Jumbotron'
 export { default as Schedule } from './Schedule'
+export { default as TrainStatusChip } from './TrainStatusChip'
