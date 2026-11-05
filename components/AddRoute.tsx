@@ -1,6 +1,5 @@
 import React from 'react';
 import { serverTimestamp } from 'firebase/database';
-import moment from 'moment';
 import { Box, Button, Card, CardContent, CardHeader, TextField } from '@mui/material';
 import { addRoute } from '../utils/firebaseActions';
 
@@ -9,43 +8,35 @@ interface FormElements extends HTMLFormControlsCollection {
   destinationInput: HTMLInputElement;
   firstServiceInput: HTMLInputElement;
   frequencyInput: HTMLInputElement;
+  trainNumberInput: HTMLInputElement;
 }
 
 interface TrainFormElement extends HTMLFormElement {
   elements: FormElements;
 }
 
+const sectionSx = { p: 1, display: 'flex', flexDirection: 'column', width: 'max-content' } as const;
+const labelStyle = { marginBottom: '12px' };
+
 const AddRoute = () => {
   const submitForm: React.ComponentProps<'form'>['onSubmit'] = (e) => {
     e.preventDefault();
 
     const form = e.currentTarget as TrainFormElement;
-    const { nameInput, destinationInput, firstServiceInput, frequencyInput } = form.elements;
+    const { nameInput, destinationInput, firstServiceInput, frequencyInput, trainNumberInput } = form.elements;
+    const trainNum = trainNumberInput.value.trim();
 
-    // Calculate next arrival time and minutes away using moment.js
-    const firstService = firstServiceInput.value;
-    const frequency = parseInt(frequencyInput.value, 10);
-    const firstTrainTimeConverted = moment(firstService, 'HH:mm').subtract(1, 'years');
-    const diffTime = moment().diff(firstTrainTimeConverted, 'minutes');
-    const tRemainder = diffTime % frequency;
-    const minutesAway = frequency - tRemainder;
-    const nextArrival = moment().add(minutesAway, 'minutes').format('hh:mm A');
-
-    const newRoute = {
-      name: nameInput.value,
-      destination: destinationInput.value,
-      firstService,
-      frequency,
-      minutesAway,
-      nextArrival,
+    addRoute({
+      name: nameInput.value.trim(),
+      destination: destinationInput.value.trim(),
+      firstService: firstServiceInput.value.trim(),
+      frequency: parseInt(frequencyInput.value, 10),
       timeAdded: serverTimestamp(),
-    };
+      ...(trainNum && { trainNum }),
+    });
 
-    addRoute(newRoute);
     form.reset();
   };
-
-  const sectionSx = { p: 1, display: 'flex', flexDirection: 'column', width: 'max-content' } as const;
 
   return (
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -62,23 +53,44 @@ const AddRoute = () => {
           <CardContent>
             <form onSubmit={submitForm}>
               <Box component="section" sx={sectionSx}>
-                <label htmlFor="nameInput" style={{ marginBottom: '12px' }}><h4>Route</h4></label>
+                <label htmlFor="nameInput" style={labelStyle}><h4>Route</h4></label>
                 <TextField required id="nameInput" variant="outlined" />
               </Box>
               <Box component="section" sx={sectionSx}>
-                <label htmlFor="destinationInput" style={{ marginBottom: '12px' }}><h4>Destination</h4></label>
+                <label htmlFor="destinationInput" style={labelStyle}><h4>Destination</h4></label>
                 <TextField required id="destinationInput" variant="outlined" />
               </Box>
               <Box component="section" sx={sectionSx}>
-                <label htmlFor="firstServiceInput" style={{ marginBottom: '12px' }}><h4>First Service (HH:mm - military time)</h4></label>
-                <TextField required id="firstServiceInput" variant="outlined" />
+                <label htmlFor="firstServiceInput" style={labelStyle}><h4>First Service (HH:mm - military time)</h4></label>
+                <TextField
+                    required
+                    id="firstServiceInput"
+                    variant="outlined"
+                    placeholder="08:30"
+                    slotProps={{ htmlInput: { pattern: '([01]\\d|2[0-3]):[0-5]\\d', title: 'Use 24-hour HH:mm, e.g. 08:30 or 15:45' } }}
+                />
               </Box>
               <Box component="section" sx={sectionSx}>
-                <label htmlFor="frequencyInput" style={{ marginBottom: '12px' }}><h4>Frequency (min)</h4></label>
-                <TextField required id="frequencyInput" variant="outlined" type="number" />
+                <label htmlFor="frequencyInput" style={labelStyle}><h4>Frequency (min)</h4></label>
+                <TextField
+                    required
+                    id="frequencyInput"
+                    variant="outlined"
+                    type="number"
+                    slotProps={{ htmlInput: { min: 1 } }}
+                />
+              </Box>
+              <Box component="section" sx={sectionSx}>
+                <label htmlFor="trainNumberInput" style={labelStyle}><h4>Amtrak Train # (optional)</h4></label>
+                <TextField
+                    id="trainNumberInput"
+                    variant="outlined"
+                    placeholder="e.g. 21"
+                    slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '\\d{1,4}', title: 'Up to 4 digits' } }}
+                />
               </Box>
               <Box component="section" sx={{ marginLeft: 2, display: 'flex', width: 'max-content' }}>
-                <Button type="submit" variant="outlined" size="large" sx={{ display: 'flex', marginTop: '20px', width: 'max-content' }}>
+                <Button type="submit" variant="outlined" size="large" sx={{ marginTop: '20px' }}>
                   Submit
                 </Button>
               </Box>

@@ -1,21 +1,21 @@
-import { initializeApp } from 'firebase/app'
-import { firebaseConfig } from "./firebaseConfig";
-import { getDatabase, onValue, push, ref, remove, set } from "firebase/database";
+import { initializeApp } from 'firebase/app';
+import { getDatabase, onValue, push, ref, remove, set } from 'firebase/database';
+import { firebaseConfig } from './firebaseConfig';
+import type { LiveStatus } from './amtrak';
 
- // Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize Realtime Database and get a reference to the service
 const database = getDatabase(app);
 
-  interface AddRouteProps {
+interface AddRouteProps {
   name: string;
   destination: string;
   firstService: string;
   frequency: number;
-  nextArrival: string;
-  minutesAway: number;
   timeAdded: object;
+  trainNum?: string;
 }
 
 export interface Route {
@@ -24,44 +24,58 @@ export interface Route {
   destination: string;
   firstService: string;
   frequency: number;
+  trainNum?: string;
 }
 
-export const subscribeToRoutes = (onChange: (value: (((prevState: Route[]) => Route[]) | Route[])) => void) => {
-  const routesRef = ref(database, 'routes'); // use your actual path
-  return onValue(routesRef, (snapshot) => {
-    const data = snapshot.val() ?? {};
-    const routes = Object.entries(data).map(([id, value]) => ({
-      id,
-      ...(value as Omit<Route, 'id'>),
-    }));
-    onChange(routes);
-  });
+export const subscribeToRoutes = (onChange: (routes: Route[]) => void) => {
+  const routesRef = ref(database, 'routes');
+  return onValue(
+      routesRef,
+      (snapshot) => {
+        const data = snapshot.val() ?? {};
+        const routes = Object.entries(data).map(([id, value]) => ({
+          id,
+          ...(value as Omit<Route, 'id'>),
+        }));
+        onChange(routes);
+      },
+      (error) => console.error('Error reading routes:', error),
+  );
 };
+
+export const subscribeToLiveStatus = (trainNum: string, onChange: (trains: LiveStatus[]) => void) =>
+    onValue(
+        ref(database, `liveStatus/${trainNum}`),
+        (snapshot) => onChange(snapshot.val()?.trains ?? []),
+        (error) => console.error('Error reading live status:', error),
+    );
 
 // Use the push() method to append data to a list in multiuser applications
 export const addRoute = (newRoute: AddRouteProps) => {
-  const { name, destination, firstService, frequency, nextArrival, minutesAway, timeAdded } = newRoute
+  const { name, destination, firstService, frequency, timeAdded, trainNum } = newRoute;
 
   const postListRef = ref(database, 'routes');
   const newPostRef = push(postListRef);
 
-    const postData = {
-    id: newPostRef.key,
+  const postData = {
     name,
     destination,
     firstService,
     frequency,
-    nextArrival,
-    minutesAway,
     timeAdded,
+
+    // Only include when set: Firebase rejects undefined values
+    ...(trainNum && { trainNum }),
   };
 
   set(newPostRef, postData)
       .then(() => console.log('Route added successfully'))
       .catch((e) => console.error('Error adding route:', e));
-}
+};
 
 export const deleteRoute = (id: string): void => {
-  const routesRef = ref(database, 'routes/' + id)
-  remove(routesRef).then(() => console.log('Route deleted successfully')).catch((e) => console.error('Error deleting route:', e));
-}
+  const routeRef = ref(database, `routes/${id}`);
+  remove(routeRef)
+      .then(() => console.log('Route deleted successfully'))
+      .catch((e) => console.error('Error deleting route:', e));
+};
