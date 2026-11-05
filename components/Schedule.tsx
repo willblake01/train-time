@@ -44,7 +44,6 @@ const Schedule = () => {
               slotProps={{
                 title: {
                   align: 'center',
-                  sx: { fontFamily: 'Train One', fontWeight: 400, fontStyle: 'normal' },
                 },
               }}
           />

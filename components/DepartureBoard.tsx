@@ -18,41 +18,35 @@ import { formatTime } from '../utils/time';
 
 const REFRESH_MS = 60_000;
 
-// Split-flap board palette
-const board = {
-  bg: '#101214',
-  row: '#16191c',
-  border: '#2a2e33',
-  amber: '#ffb000',
-  green: '#4cd964',
-  red: '#ff5a4f',
-  dim: '#8a8f96',
-  font: '"Courier New", ui-monospace, SFMono-Regular, Menlo, monospace',
-};
+// Monospace keeps the split-flap board look in both themes; colors come from
+// the theme, so the board is black-on-white in light mode and amber-on-black in dark
+const BOARD_FONT = '"Courier New", ui-monospace, SFMono-Regular, Menlo, monospace';
 
 const cellSx = {
-  color: board.amber,
-  fontFamily: board.font,
+  color: 'text.primary',
+  fontFamily: BOARD_FONT,
   fontSize: '0.95rem',
   letterSpacing: '0.04em',
   textTransform: 'uppercase',
-  borderBottom: `1px solid ${board.border}`,
+  borderBottom: 1,
+  borderColor: 'divider',
   whiteSpace: 'nowrap',
 } as const;
 
-const headCellSx = { ...cellSx, bgcolor: board.bg, color: board.dim, fontSize: '0.75rem' } as const;
+const headCellSx = { ...cellSx, bgcolor: 'background.paper', color: 'text.secondary', fontSize: '0.75rem' } as const;
 
 const StatusText = ({ departure }: { departure: Departure }) => {
-  if (departure.status === 'boarding') return <Box component="span" sx={{ color: board.green }}>Boarding</Box>;
+  if (departure.status === 'boarding') return <Box component="span" sx={{ color: 'success.main' }}>Boarding</Box>;
   if (departure.status === 'delayed') {
     const { estimated, tz } = departure.station;
+    const eta = formatTime(estimated, tz);
     return (
-      <Box component="span" sx={{ color: departure.delayMinutes > 15 ? board.red : board.amber }}>
-        Delayed · {formatTime(estimated, tz)}
+      <Box component="span" sx={{ color: departure.delayMinutes > 15 ? 'error.main' : 'warning.main' }}>
+        Delayed{eta ? ` · ${eta}` : ''}
       </Box>
     );
   }
-  return <Box component="span" sx={{ color: board.green }}>On time</Box>;
+  return <Box component="span" sx={{ color: 'success.main' }}>On time</Box>;
 };
 
 interface DepartureBoardProps {
@@ -63,7 +57,7 @@ interface DepartureBoardProps {
   onSelect?: (departure: Departure) => void;
 }
 
-const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect }: DepartureBoardProps) => {
+const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [], onSelect }: DepartureBoardProps) => {
   const [station, setStation] = useState(initialStation);
   const [departures, setDepartures] = useState(initialDepartures);
   const [status, setStatus] = useState<'ready' | 'loading' | 'error'>('ready');
@@ -112,10 +106,10 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
   const columns = onSelect ? 6 : 5;
 
   return (
-    <Box sx={{ bgcolor: board.bg, borderRadius: '25px', p: { xs: 2, sm: 3 }, border: `1px solid ${board.border}` }}>
+    <Box sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: '25px', p: { xs: 2, sm: 3 }, border: 1, borderColor: 'divider' }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2 }}>
-        <Typography component="h2" sx={{ color: board.amber, fontFamily: board.font, fontSize: '1.5rem', letterSpacing: '0.12em' }}>
-          DEPARTURES
+        <Typography variant="h5" component="h2">
+          Departures
         </Typography>
 
         <Autocomplete
@@ -127,16 +121,7 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
           isOptionEqualToValue={(option, value) => option.code === value.code}
           sx={{ minWidth: { xs: '100%', sm: 320 } }}
           renderInput={(params) => (
-            <TextField
-              {...params}
-              size="small"
-              label="Station"
-              sx={{
-                '& .MuiInputBase-root': { color: board.amber, fontFamily: board.font, bgcolor: board.row },
-                '& .MuiInputLabel-root, & .MuiAutocomplete-popupIndicator': { color: board.dim },
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: board.border },
-              }}
-            />
+            <TextField {...params} size="small" label="Station" sx={{ '& .MuiInputBase-root': { fontFamily: BOARD_FONT } }} />
           )}
         />
       </Box>
@@ -155,11 +140,11 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
           </TableHead>
           <TableBody aria-live="polite" aria-busy={status === 'loading'}>
             {departures.map((d) => (
-              <TableRow key={d.trainID} sx={{ bgcolor: board.row }}>
+              <TableRow key={d.trainID} hover>
                 <TableCell sx={cellSx}>{formatTime(d.station.scheduled, d.station.tz)}</TableCell>
                 <TableCell sx={cellSx}>
                   {d.trainNum}{' '}
-                  <Box component="span" sx={{ color: board.dim }}>{d.routeName}</Box>
+                  <Box component="span" sx={{ color: 'text.secondary' }}>{d.routeName}</Box>
                 </TableCell>
                 <TableCell sx={cellSx}>{d.destName}</TableCell>
                 <TableCell sx={cellSx}>{d.platform || '—'}</TableCell>
@@ -172,7 +157,7 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
                       size="small"
                       variant="outlined"
                       onClick={() => onSelect(d)}
-                      sx={{ color: board.amber, borderColor: board.amber, fontFamily: board.font }}
+                      sx={{ fontFamily: BOARD_FONT }}
                     >
                       Select
                     </Button>
@@ -183,7 +168,7 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
 
             {departures.length === 0 && (
               <TableRow>
-                <TableCell colSpan={columns} align="center" sx={{ ...cellSx, color: board.dim, py: 4 }}>
+                <TableCell colSpan={columns} align="center" sx={{ ...cellSx, color: 'text.secondary', py: 4 }}>
                   {status === 'loading' && 'Loading departures…'}
                   {status === 'error' && 'Departure data unavailable. Retrying shortly.'}
                   {status === 'ready' && 'No upcoming departures'}
@@ -194,9 +179,9 @@ const DepartureBoard = ({ stations, initialStation, initialDepartures, onSelect 
         </Table>
       </TableContainer>
 
-      <Typography variant="caption" sx={{ display: 'block', mt: 1, textAlign: 'right', color: board.dim }}>
+      <Typography variant="caption" sx={{ display: 'block', mt: 1, textAlign: 'right', color: 'text.secondary' }}>
         Times shown in station local time · Live data from{' '}
-        <Link href="https://amtraker.com" target="_blank" rel="noreferrer" sx={{ color: board.amber }}>
+        <Link href="https://amtraker.com" target="_blank" rel="noreferrer">
           Amtraker
         </Link>
       </Typography>

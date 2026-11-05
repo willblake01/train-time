@@ -56,8 +56,8 @@ train-time/
 │  └─ Schedule/       # Train schedule display and calculations
 │
 ├─ pages/
-│  ├─ _app.js         # Global layout, styles, and providers
-│  ├─ _document.js    # Custom document structure
+│  ├─ _app.tsx         # Global layout, styles, and providers
+│  ├─ _document.tsx    # Custom document structure
 │  └─ Landing/        # Primary landing page
 │
 ├─ public/            # Static assets
@@ -77,7 +77,7 @@ train-time/
 - **Firebase access is isolated** in `utils/firebaseActions`, preventing UI components from coupling directly to backend APIs.
 - **Page-level composition** lives in `pages`, while reusable UI logic remains in `components`.
 - **Time-sensitive logic** is colocated with the schedule domain, keeping calculations explicit and testable.
-- Custom `_app.js` and `_document.js` provide framework-level control and scalability.
+- Custom `_app.tsx` and `_document.tsx` provide framework-level control and scalability.
 
 This structure mirrors patterns used in real-world Next.js production applications.
 
