@@ -51,16 +51,28 @@ const StatusText = ({ departure }: { departure: Departure }) => {
 
 interface DepartureBoardProps {
   stations: StationOption[];
-  initialStation: string;
-  initialDepartures: Departure[];
-  /** Shows a Select button on each row, used when adding a leg to a trip */
+  /** Station shown on the board; the page owns it so New Trip can move the board */
+  station: string;
+  onStationChange: (code: string) => void;
+  /** Only show trains leaving at or after this time (ISO), e.g. the last leg's arrival */
+  after?: string;
+  /** Server-rendered data for the first load; omit to fetch on mount */
+  initialDepartures?: Departure[];
+  /** Shown under the title while building a trip */
+  addingTo?: {
+    tripName: string;
+    /** e.g. "7:20 PM", when only trains after the last leg's arrival are shown */
+    afterLabel?: string;
+    onShowAll?: () => void;
+    onDone: () => void;
+  };
+  /** Shows an "Add to trip" button on each row */
   onSelect?: (departure: Departure) => void;
 }
 
-const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [], onSelect }: DepartureBoardProps) => {
-  const [station, setStation] = useState(initialStation);
-  const [departures, setDepartures] = useState(initialDepartures);
-  const [status, setStatus] = useState<'ready' | 'loading' | 'error'>('ready');
+const DepartureBoard = ({ stations = [], station, onStationChange, after, initialDepartures, addingTo, onSelect }: DepartureBoardProps) => {
+  const [departures, setDepartures] = useState(initialDepartures ?? []);
+  const [status, setStatus] = useState<'ready' | 'loading' | 'error'>(initialDepartures ? 'ready' : 'loading');
 
   // If the station isn't in today's list (e.g. data failed to load), still show it
   const { selected, options } = useMemo(() => {
@@ -72,9 +84,10 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
   // Keep the board current; refetch on station change and every minute
   useEffect(() => {
     let cancelled = false;
+    const params = new URLSearchParams({ station, ...(after && { after }) });
 
     const load = () => {
-      fetch(`/api/departures?station=${station}`)
+      fetch(`/api/departures?${params.toString()}`)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json() as Promise<{ departures: Departure[] }>;
@@ -95,13 +108,7 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
       cancelled = true;
       clearInterval(interval);
     };
-  }, [station]);
-
-  const changeStation = (code: string) => {
-    setStation(code);
-    setDepartures([]);
-    setStatus('loading');
-  };
+  }, [station, after]);
 
   const columns = onSelect ? 6 : 5;
 
@@ -116,7 +123,7 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
           disableClearable
           options={options}
           value={selected}
-          onChange={(_, option) => changeStation(option.code)}
+          onChange={(_, option) => onStationChange(option.code)}
           getOptionLabel={(option) => `${option.name} (${option.code})`}
           isOptionEqualToValue={(option, value) => option.code === value.code}
           sx={{ minWidth: { xs: '100%', sm: 320 } }}
@@ -125,6 +132,23 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
           )}
         />
       </Box>
+
+      {addingTo && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Adding to <Box component="strong" sx={{ color: 'text.primary' }}>{addingTo.tripName}</Box>
+              {addingTo.afterLabel && ` · trains leaving after ${addingTo.afterLabel}`}
+            </Typography>
+            {addingTo.afterLabel && addingTo.onShowAll && (
+                <Button size="small" onClick={addingTo.onShowAll}>
+                  Show all
+                </Button>
+            )}
+            <Button size="small" onClick={addingTo.onDone}>
+              Done
+            </Button>
+          </Box>
+      )}
 
       <TableContainer sx={{ maxHeight: 520 }}>
         <Table stickyHeader size="small" aria-label={`Departures from ${selected.name}`}>
@@ -154,12 +178,13 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
                 {onSelect && (
                   <TableCell sx={cellSx} align="right">
                     <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => onSelect(d)}
-                      sx={{ fontFamily: BOARD_FONT }}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => onSelect(d)}
+                        aria-label={`Add train ${d.trainNum} to ${d.destName} to a trip`}
+                        sx={{ fontFamily: BOARD_FONT }}
                     >
-                      Select
+                      Add to trip
                     </Button>
                   </TableCell>
                 )}
@@ -171,7 +196,7 @@ const DepartureBoard = ({ stations = [], initialStation, initialDepartures = [],
                 <TableCell colSpan={columns} align="center" sx={{ ...cellSx, color: 'text.secondary', py: 4 }}>
                   {status === 'loading' && 'Loading departures…'}
                   {status === 'error' && 'Departure data unavailable. Retrying shortly.'}
-                  {status === 'ready' && 'No upcoming departures'}
+                  {status === 'ready' && (after ? 'No more departures after that time' : 'No upcoming departures')}
                 </TableCell>
               </TableRow>
             )}

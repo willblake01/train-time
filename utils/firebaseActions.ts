@@ -1,7 +1,9 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, onValue, push, ref, remove, set } from 'firebase/database';
+import { getDatabase, onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from './firebaseConfig';
 import type { LiveStatus } from './amtrak';
+import { parseTrips, type NewLeg, type Trip } from './trips';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -9,39 +11,41 @@ const app = initializeApp(firebaseConfig);
 // Initialize Realtime Database and get a reference to the service
 const database = getDatabase(app);
 
-interface AddRouteProps {
-  name: string;
-  destination: string;
-  firstService: string;
-  frequency: number;
-  timeAdded: object;
-  trainNum?: string;
-}
+// Initialize Firebase Authentication and get a reference to the service
+const auth = getAuth(app);
 
-export interface Route {
-  id: string;
-  name: string;
-  destination: string;
-  firstService: string;
-  frequency: number;
-  trainNum?: string;
-}
+// Every visitor gets a Firebase user ID without a login screen: the first visit
+// signs in anonymously, and Firebase remembers that user in this browser.
+// Trips are stored under that ID, and the database rules only let its owner in.
+let uidPromise: Promise<string> | null = null;
 
-export const subscribeToRoutes = (onChange: (routes: Route[]) => void) => {
-  const routesRef = ref(database, 'routes');
-  return onValue(
-      routesRef,
-      (snapshot) => {
-        const data = snapshot.val() ?? {};
-        const routes = Object.entries(data).map(([id, value]) => ({
-          id,
-          ...(value as Omit<Route, 'id'>),
-        }));
-        onChange(routes);
-      },
-      (error) => console.error('Error reading routes:', error),
-  );
+export const getUid = (): Promise<string> => {
+  if (!uidPromise) {
+    uidPromise = new Promise<string>((resolve, reject) => {
+      const unsubscribe = onAuthStateChanged(
+          auth,
+          (user) => {
+            if (user) {
+              unsubscribe();
+              resolve(user.uid);
+            } else {
+              signInAnonymously(auth).catch((error) => {
+                unsubscribe();
+                reject(error);
+              });
+            }
+          },
+          reject,
+      );
+    }).catch((error) => {
+      uidPromise = null; // let the next call try again
+      throw error;
+    });
+  }
+  return uidPromise;
 };
+
+const tripsPath = (uid: string) => `users/${uid}/trips`;
 
 export const subscribeToLiveStatus = (trainNum: string, onChange: (trains: LiveStatus[]) => void) =>
     onValue(
@@ -50,32 +54,63 @@ export const subscribeToLiveStatus = (trainNum: string, onChange: (trains: LiveS
         (error) => console.error('Error reading live status:', error),
     );
 
-// Use the push() method to append data to a list in multiuser applications
-export const addRoute = (newRoute: AddRouteProps) => {
-  const { name, destination, firstService, frequency, timeAdded, trainNum } = newRoute;
+// --- Trips ---
 
-  const postListRef = ref(database, 'routes');
-  const newPostRef = push(postListRef);
+export const subscribeToTrips = (onChange: (trips: Trip[]) => void) => {
+  let unsubscribe = () => {};
+  let cancelled = false;
 
-  const postData = {
-    name,
-    destination,
-    firstService,
-    frequency,
-    timeAdded,
+  // Signing in is async, so start listening once the user ID is known
+  getUid()
+      .then((uid) => {
+        if (cancelled) return;
+        unsubscribe = onValue(
+            ref(database, tripsPath(uid)),
+            (snapshot) => onChange(parseTrips(snapshot.val())),
+            (error) => console.error('Error reading trips:', error),
+        );
+      })
+      .catch((error) => console.error('Could not sign in:', error));
 
-    // Only include when set: Firebase rejects undefined values
-    ...(trainNum && { trainNum }),
+  return () => {
+    cancelled = true;
+    unsubscribe();
   };
-
-  set(newPostRef, postData)
-      .then(() => console.log('Route added successfully'))
-      .catch((e) => console.error('Error adding route:', e));
 };
 
-export const deleteRoute = (id: string): void => {
-  const routeRef = ref(database, `routes/${id}`);
-  remove(routeRef)
-      .then(() => console.log('Route deleted successfully'))
-      .catch((e) => console.error('Error deleting route:', e));
+// These return promises so the UI can show saving and error states
+export const createTrip = async ({ name, from, to }: { name: string; from?: string; to?: string }): Promise<string> => {
+  const uid = await getUid();
+  const tripRef = push(ref(database, tripsPath(uid)));
+  await set(tripRef, {
+    name: name.trim(),
+    createdAt: serverTimestamp(),
+    // Station codes, only when chosen: Firebase rejects undefined values
+    ...(from && { from }),
+    ...(to && { to }),
+  });
+  return tripRef.key as string;
+};
+
+export const addLeg = async (tripId: string, leg: NewLeg) => {
+  const uid = await getUid();
+  await set(push(ref(database, `${tripsPath(uid)}/${tripId}/legs`)), { ...leg, addedAt: serverTimestamp() });
+};
+
+export const deleteLeg = async (tripId: string, legId: string) => {
+  try {
+    const uid = await getUid();
+    await remove(ref(database, `${tripsPath(uid)}/${tripId}/legs/${legId}`));
+  } catch (e) {
+    console.error('Error removing leg:', e);
+  }
+};
+
+export const deleteTrip = async (tripId: string) => {
+  try {
+    const uid = await getUid();
+    await remove(ref(database, `${tripsPath(uid)}/${tripId}`));
+  } catch (e) {
+    console.error('Error deleting trip:', e);
+  }
 };

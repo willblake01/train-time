@@ -51,9 +51,9 @@ The codebase is structured to scale, making it suitable for feature expansion, r
 ```
 train-time/
 ├─ components/
-│  ├─ AddRoute/        # Form logic for adding train routes
+│  ├─ NewTrip/        # Form logic for adding train routes
 │  ├─ Jumbotron/      # Hero / introductory UI
-│  └─ Schedule/       # Train schedule display and calculations
+│  └─ MyTrips/       # Train schedule display and calculations
 │
 ├─ pages/
 │  ├─ _app.tsx         # Global layout, styles, and providers

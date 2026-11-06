@@ -1,6 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 
 const amber = '#ffb000';
+const amtrakBlue = '#00537E';
 
 export const RAIL_FONT = '"Train One", system-ui, sans-serif';
 
@@ -17,6 +18,7 @@ export const theme = createTheme({
     colorSchemes: {
         light: {
             palette: {
+                primary: { main: amtrakBlue },
                 background: { default: '#f4f5f7', paper: '#ffffff' },
                 text: { primary: '#111111', secondary: '#5f6368' },
             },

@@ -19,23 +19,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const lock = await adminDb.ref('liveStatusMeta/fetchedAt').transaction((last: number | null) =>
             last && now - last < MIN_INTERVAL_MS ? undefined : now,
         );
+
         if (!lock.committed) {
             return res.status(200).json({ skipped: true });
         }
 
-        // Only refresh trains that someone has actually saved
-        const routes = await adminDb.ref('routes').get();
+        // Only refresh trains that someone has actually saved, in a route or a trip leg.
+        // Trips are private per user (users/{uid}/trips); the admin SDK can read them all.
+        const [routes, users] = await Promise.all([adminDb.ref('routes').get(), adminDb.ref('users').get()]);
         const trainNums = new Set<string>();
+
         routes.forEach((route) => {
             const trainNum = route.child('trainNum').val();
             if (typeof trainNum === 'string' && TRAIN_NUM.test(trainNum)) trainNums.add(trainNum);
         });
+
+        users.forEach((user) => {
+            user.child('trips').forEach((trip) => {
+                trip.child('legs').forEach((leg) => {
+                    const trainNum = leg.child('trainNum').val();
+                    if (typeof trainNum === 'string' && TRAIN_NUM.test(trainNum)) trainNums.add(trainNum);
+                });
+            });
+        });
+
         const toRefresh = [...trainNums].slice(0, MAX_TRAINS);
 
         const results = await Promise.allSettled(toRefresh.map((n) => fetchTrain(n)));
 
         const updates: Record<string, unknown> = {};
         const failed: string[] = [];
+
         results.forEach((result, i) => {
             const trainNum = toRefresh[i];
             if (result.status === 'fulfilled') {

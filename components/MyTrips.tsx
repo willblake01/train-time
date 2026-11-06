@@ -1,0 +1,191 @@
+import React, { Fragment } from 'react';
+import { deleteLeg, deleteTrip } from '../utils/firebaseActions';
+import { useLiveRefresh, useLiveStatus } from '../utils/useLiveStatus';
+import { useTrips } from '../utils/useTrips';
+import { formatDate, formatDuration, formatTime } from '../utils/time';
+import { connections, type Connection, type Trip } from '../utils/trips';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
+import { TrainStatusChip } from '.';
+
+// Match the exact run (trainID), not just the number: long-distance trains overlap across days
+const LiveStatusChip = ({ trainNum, trainID }: { trainNum: string; trainID: string }) => {
+  const train = useLiveStatus(trainNum).find((t) => t.trainID === trainID);
+  return <TrainStatusChip train={train} />;
+};
+
+// Warning shown between two legs when the connection doesn't work; null when it's fine.
+// `legNumber` is the number of the leg that arrives at the connecting station.
+const connectionWarning = ({ status, minutes, station, nextStation }: Connection, legNumber: number) => {
+    const next = legNumber + 1;
+    if (status === 'missed') {
+        return { color: 'error.main', text: `Can't connect: leg ${next} leaves ${formatDuration(minutes)} before leg ${legNumber} arrives in ${station}` };
+    }
+    if (status === 'gap') {
+        return { color: 'error.main', text: `Leg ${next} starts in ${nextStation}, but leg ${legNumber} arrives in ${station}` };
+    }
+    if (status === 'tight') {
+        return { color: 'warning.main', text: `Tight connection: only ${formatDuration(minutes)} to change trains in ${station}` };
+    }
+    return null;
+};
+
+// "2:45 AM · Nov 6", so legs on different days are obvious
+const formatDeparture = (iso: string, tz: string) => {
+    const time = formatTime(iso, tz);
+    return time ? `${time} · ${formatDate(iso, tz)}` : '--';
+};
+
+const LegsTable = ({ trip }: { trip?: Trip }) => {
+    const layovers = trip ? connections(trip.legs) : [];
+
+    return (
+        <TableContainer>
+            <Table sx={{ minWidth: 700 }} aria-label={trip ? `${trip.name} legs` : 'My trips'}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Leg</TableCell>
+                        <TableCell>Train</TableCell>
+                        <TableCell>From</TableCell>
+                        <TableCell>To</TableCell>
+                        <TableCell>Departs</TableCell>
+                        <TableCell>Live Status</TableCell>
+                        <TableCell />
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {trip && trip.legs.length === 0 && (
+                        <TableRow>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell />
+                        </TableRow>
+                    )}
+                    {trip?.legs.map((leg, index) => {
+                        const warning = layovers[index] && connectionWarning(layovers[index], index + 1);
+                        return (
+                            <Fragment key={leg.id}>
+                                <TableRow>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>#{leg.trainNum} {leg.routeName}</TableCell>
+                                    <TableCell>{leg.from.name}</TableCell>
+                                    <TableCell>{leg.to.name}</TableCell>
+                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDeparture(leg.from.time, leg.from.tz)}</TableCell>
+                                    <TableCell><LiveStatusChip trainNum={leg.trainNum} trainID={leg.trainID} /></TableCell>
+                                    <TableCell>
+                                        <Button onClick={() => deleteLeg(trip.id, leg.id)} aria-label={`Remove leg ${index + 1} from ${trip.name}`}>
+                                            <DeleteIcon fontSize="small" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                {warning && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} sx={{ color: warning.color, fontWeight: 600 }}>
+                                            ⚠ {warning.text}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </Fragment>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+};
+
+interface MyTripsProps {
+    /** Starts adding legs to a trip: the page moves the board to where the next leg leaves from */
+    onAddLeg?: (trip: Trip) => void;
+    /** The trip legs are currently being added to */
+    activeTripId?: string;
+}
+
+const MyTrips = ({ onAddLeg, activeTripId }: MyTripsProps) => {
+  useLiveRefresh();
+
+  const { trips } = useTrips();
+
+    const tripRoute = ({ from, to }: Trip) => {
+        if (from && to) return `${from} → ${to}`;
+        if (from) return `from ${from}`;
+        if (to) return `to ${to}`;
+        return '';
+    };
+
+  return (
+      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Card sx={{ borderRadius: '25px' }}>
+          <CardHeader
+              title="My Trips"
+              slotProps={{
+                title: {
+                  align: 'center',
+                },
+              }}
+          />
+          <CardContent>
+            {/* No trips yet: show the empty table, as before */}
+            {trips.length === 0 && <LegsTable />}
+
+              {trips.map((trip) => (
+                  <Box key={trip.id} component="section" aria-label={trip.name} sx={{ '& + &': { mt: 4 } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, px: 2 }}>
+                          <Typography component="h3" sx={{ fontWeight: 700 }}>
+                              {trip.name}
+
+                              {/* tripRoute: "AUS → FLG" next to the name */}
+                              {tripRoute(trip) && (
+                                  <Typography component="span" sx={{ color: 'text.secondary', fontWeight: 400, ml: 1 }}>
+                                      {tripRoute(trip)}
+                                  </Typography>
+                              )}
+
+                              {/* activeTripId: marks the trip you're adding legs to */}
+                              {trip.id === activeTripId && (
+                                  <Typography component="span" variant="body2" sx={{ color: 'text.secondary', fontWeight: 400, ml: 1 }}>
+                                      · adding legs
+                                  </Typography>
+                              )}
+                          </Typography>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {/* onAddLeg: tells the page to move the board to this trip's next leg */}
+                              {onAddLeg && (
+                                  <Button size="small" variant="outlined" onClick={() => onAddLeg(trip)} aria-label={`Add a leg to ${trip.name}`}>
+                                      Add leg
+                                  </Button>
+                              )}
+                              <Button onClick={() => deleteTrip(trip.id)} aria-label={`Delete ${trip.name}`}>
+                                  <DeleteIcon fontSize="small" />
+                              </Button>
+                          </Box>
+                      </Box>
+
+                      <LegsTable trip={trip} />
+                  </Box>
+              ))}
+          </CardContent>
+        </Card>
+      </Box>
+  );
+};
+
+export default MyTrips;
