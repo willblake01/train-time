@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import type { Departure } from '../../../../Downloads/timetable-step/utils/departures';
-import { formatTime } from '../../../../Downloads/timetable-step/utils/time';
+import type { Departure } from '../departures';
+import { formatTime } from '../time';
 import {
   addDays,
   daysBetween,
@@ -11,7 +11,7 @@ import {
   serviceDayStart,
   serviceRunsOn,
   stopTimeToIso,
-} from '../../../../Downloads/timetable-step/utils/timetable';
+} from '../timetable';
 import type { Schedule } from '../timetableTypes';
 
 const h = (hours: number, minutes = 0) => hours * 3600 + minutes * 60;

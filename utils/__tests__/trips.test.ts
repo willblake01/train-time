@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import type { Departure } from '../../../../Downloads/timetable-step/utils/departures';
-import { buildLeg, checkLeg, connections, findLiveRun, nextLegSearch, nextLegStart, parseTrips, type Leg, type NewLeg, type Trip } from '../../../../Downloads/timetable-step/utils/trips';
+import type { Departure } from '../departures';
+import { buildLeg, checkLeg, connections, findLiveRun, nextLegStart, nextLegSearch, parseTrips, type Leg, type NewLeg, type Trip } from '../trips';
 
 const CT = 'America/Chicago';
 const at = (time: string, day = '05') => `2026-11-${day}T${time}:00-06:00`;
