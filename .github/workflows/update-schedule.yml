@@ -1,0 +1,44 @@
+name: Update Amtrak schedule
+
+on:
+  schedule:
+    # Mondays at 9:17 UTC (early morning in the US)
+    - cron: '17 9 * * 1'
+  # Also runnable by hand from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Downloads Amtrak's GTFS feed and rewrites data/schedule.json. Fails, without
+      # changing anything, if the feed is missing files or looks truncated.
+      - name: Build schedule from Amtrak's feed
+        run: npm run build:schedule -- --summary schedule-summary.md
+
+      - name: Run tests
+        run: npm test
+
+      # Opens (or updates) a pull request only when the schedule actually changed
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/update-amtrak-schedule
+          delete-branch: true
+          add-paths: data/schedule.json
+          commit-message: 'chore: update Amtrak schedule'
+          title: 'Update Amtrak schedule'
+          body-path: schedule-summary.md
