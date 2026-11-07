@@ -13,8 +13,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import type { Departure, StationOption } from '../utils/departures';
-import { formatTime } from '../utils/time';
+import type { Departure, StationOption } from '../utils';
+import { formatTime } from '../utils';
 
 const REFRESH_MS = 60_000;
 
@@ -46,6 +46,7 @@ const StatusText = ({ departure }: { departure: Departure }) => {
       </Box>
     );
   }
+  if (departure.status === 'scheduled') return <Box component="span" sx={{ color: 'text.secondary' }}>Scheduled</Box>;
   return <Box component="span" sx={{ color: 'success.main' }}>On time</Box>;
 };
 
@@ -54,6 +55,12 @@ interface DepartureBoardProps {
   /** Station shown on the board; the page owns it so New Trip can move the board */
   station: string;
   onStationChange: (code: string) => void;
+  /** Local date at the station (YYYY-MM-DD) */
+  date: string;
+  onDateChange: (date: string) => void;
+  /** Earliest and latest dates the picker allows (YYYY-MM-DD) */
+  minDate?: string;
+  maxDate?: string;
   /** Only show trains leaving at or after this time (ISO), e.g. the last leg's arrival */
   after?: string;
   /** Server-rendered data for the first load; omit to fetch on mount */
@@ -70,7 +77,21 @@ interface DepartureBoardProps {
   onSelect?: (departure: Departure) => void;
 }
 
-const DepartureBoard = ({ stations = [], station, onStationChange, after, initialDepartures, addingTo, onSelect }: DepartureBoardProps) => {
+// Give the board key={station}: when the station changes it remounts with
+// fresh state instead of briefly showing the previous station's trains.
+const DepartureBoard = ({
+  stations = [],
+  station,
+  onStationChange,
+  date,
+  onDateChange,
+  minDate,
+  maxDate,
+  after,
+  initialDepartures,
+  addingTo,
+  onSelect,
+}: DepartureBoardProps) => {
   const [departures, setDepartures] = useState(initialDepartures ?? []);
   const [status, setStatus] = useState<'ready' | 'loading' | 'error'>(initialDepartures ? 'ready' : 'loading');
 
@@ -84,10 +105,11 @@ const DepartureBoard = ({ stations = [], station, onStationChange, after, initia
   // Keep the board current; refetch on station change and every minute
   useEffect(() => {
     let cancelled = false;
-    const params = new URLSearchParams({ station, ...(after && { after }) });
+
+    const params = new URLSearchParams({ station, date, ...(after && { after }) });
 
     const load = () => {
-      fetch(`/api/departures?${params.toString()}`)
+      fetch(`/api/departures?${params}`)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json() as Promise<{ departures: Departure[] }>;
@@ -108,7 +130,7 @@ const DepartureBoard = ({ stations = [], station, onStationChange, after, initia
       cancelled = true;
       clearInterval(interval);
     };
-  }, [station, after]);
+  }, [station, date, after]);
 
   const columns = onSelect ? 6 : 5;
 
@@ -119,35 +141,46 @@ const DepartureBoard = ({ stations = [], station, onStationChange, after, initia
           Departures
         </Typography>
 
-        <Autocomplete
-          disableClearable
-          options={options}
-          value={selected}
-          onChange={(_, option) => onStationChange(option.code)}
-          getOptionLabel={(option) => `${option.name} (${option.code})`}
-          isOptionEqualToValue={(option, value) => option.code === value.code}
-          sx={{ minWidth: { xs: '100%', sm: 320 } }}
-          renderInput={(params) => (
-            <TextField {...params} size="small" label="Station" sx={{ '& .MuiInputBase-root': { fontFamily: BOARD_FONT } }} />
-          )}
-        />
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Autocomplete
+            disableClearable
+            options={options}
+            value={selected}
+            onChange={(_, option) => onStationChange(option.code)}
+            getOptionLabel={(option) => `${option.name} (${option.code})`}
+            isOptionEqualToValue={(option, value) => option.code === value.code}
+            sx={{ minWidth: { xs: '100%', sm: 320 } }}
+            renderInput={(params) => (
+              <TextField {...params} size="small" label="Station" sx={{ '& .MuiInputBase-root': { fontFamily: BOARD_FONT } }} />
+            )}
+          />
+          <TextField
+            type="date"
+            size="small"
+            label="Date"
+            value={date}
+            onChange={(e) => e.target.value && onDateChange(e.target.value)}
+            sx={{ width: { xs: '100%', sm: 170 }, '& .MuiInputBase-root': { fontFamily: BOARD_FONT } }}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: minDate, max: maxDate } }}
+          />
+        </Box>
       </Box>
 
       {addingTo && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Adding to <Box component="strong" sx={{ color: 'text.primary' }}>{addingTo.tripName}</Box>
-              {addingTo.afterLabel && ` · trains leaving after ${addingTo.afterLabel}`}
-            </Typography>
-            {addingTo.afterLabel && addingTo.onShowAll && (
-                <Button size="small" onClick={addingTo.onShowAll}>
-                  Show all
-                </Button>
-            )}
-            <Button size="small" onClick={addingTo.onDone}>
-              Done
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Adding to <Box component="strong" sx={{ color: 'text.primary' }}>{addingTo.tripName}</Box>
+            {addingTo.afterLabel && ` · trains leaving after ${addingTo.afterLabel}`}
+          </Typography>
+          {addingTo.afterLabel && addingTo.onShowAll && (
+            <Button size="small" onClick={addingTo.onShowAll}>
+              Show all
             </Button>
-          </Box>
+          )}
+          <Button size="small" onClick={addingTo.onDone}>
+            Done
+          </Button>
+        </Box>
       )}
 
       <TableContainer sx={{ maxHeight: 520 }}>
@@ -178,11 +211,11 @@ const DepartureBoard = ({ stations = [], station, onStationChange, after, initia
                 {onSelect && (
                   <TableCell sx={cellSx} align="right">
                     <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => onSelect(d)}
-                        aria-label={`Add train ${d.trainNum} to ${d.destName} to a trip`}
-                        sx={{ fontFamily: BOARD_FONT }}
+                      size="small"
+                      variant="outlined"
+                      onClick={() => onSelect(d)}
+                      aria-label={`Add train ${d.trainNum} to ${d.destName} to a trip`}
+                      sx={{ fontFamily: BOARD_FONT }}
                     >
                       Add to trip
                     </Button>
@@ -196,7 +229,7 @@ const DepartureBoard = ({ stations = [], station, onStationChange, after, initia
                 <TableCell colSpan={columns} align="center" sx={{ ...cellSx, color: 'text.secondary', py: 4 }}>
                   {status === 'loading' && 'Loading departures…'}
                   {status === 'error' && 'Departure data unavailable. Retrying shortly.'}
-                  {status === 'ready' && (after ? 'No more departures after that time' : 'No upcoming departures')}
+                  {status === 'ready' && (after ? 'No more departures after that time' : 'No departures on this date')}
                 </TableCell>
               </TableRow>
             )}

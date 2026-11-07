@@ -20,6 +20,8 @@ const StopSchema = z.object({
   platform: str, // track number when Amtrak provides one; often blank
 });
 
+// Fields the app can't work without are strict; descriptive ones fall back
+// to defaults so one odd record doesn't hide the train
 const TrainSchema = z.object({
   trainID: z.string(),
   trainNum: z.coerce.number(),
@@ -53,6 +55,8 @@ export interface LiveStatus {
   lat: number;
   lon: number;
   updatedAt: string;
+  /** Scheduled time at every stop, so a saved trip leg can find its run */
+  stops?: { code: string; scheduled: string }[];
   nextStop?: {
     code: string;
     name: string;
@@ -92,8 +96,11 @@ export function parseTrainResponse(json: unknown): AmtrakTrain[] {
   return trains;
 }
 
+/** Give up on a slow Amtraker response rather than holding up a page or API call */
+const TIMEOUT_MS = 8_000;
+
 async function fetchTrains(path: string): Promise<AmtrakTrain[]> {
-  const res = await fetch(`${BASE_URL}${path}`, { headers: HEADERS });
+  const res = await fetch(`${BASE_URL}${path}`, { headers: HEADERS, signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!res.ok) throw new Error(`Amtraker responded ${res.status}`);
   return parseTrainResponse(await res.json());
 }
@@ -128,6 +135,7 @@ export function toLiveStatus(train: AmtrakTrain): LiveStatus {
     lat: train.lat,
     lon: train.lon,
     updatedAt: train.updatedAt,
+    stops: train.stations.map((s) => ({ code: s.code, scheduled: s.schDep || s.schArr })),
   };
 
   // Only set nextStop when there is one: Firebase rejects undefined values

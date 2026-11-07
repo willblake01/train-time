@@ -1,5 +1,6 @@
 // Pure trip logic: no Firebase or network calls, so it's safe anywhere and easy to test.
 import { z } from 'zod';
+import type { LiveStatus } from './amtrak';
 import type { Departure, StopTime } from './departures';
 import { localDate } from './time';
 
@@ -65,6 +66,13 @@ export function buildLeg(departure: Departure, alight: StopTime): NewLeg {
     };
 }
 
+// Where and when to look for the next leg: the arrival station, from the
+// arrival time plus a buffer to change trains
+export function nextLegSearch(leg: Pick<Leg, 'to'>, bufferMin = CONNECTION_BUFFER_MIN) {
+    const after = new Date(Date.parse(leg.to.time) + bufferMin * 60_000).toISOString();
+    return { station: leg.to.code, stationName: leg.to.name, tz: leg.to.tz, after };
+}
+
 const minutesBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 60_000);
 
 // The layover between each pair of consecutive legs (legs must be sorted)
@@ -126,6 +134,20 @@ export function checkLeg(
         return { warning: `Tight connection: only ${minutes} min to change trains in ${last.to.name}.` };
     }
     return {};
+}
+
+const LIVE_MATCH_WINDOW_MS = 90 * 60_000;
+
+// The live run a saved leg is riding, if it's running now. Matches the train
+// ID first, then falls back to the train number plus its scheduled time at the
+// leg's boarding station, which works however the ID was built.
+export function findLiveRun(trains: LiveStatus[], leg: Pick<Leg, 'trainID' | 'from'>): LiveStatus | undefined {
+  return (
+    trains.find((t) => t.trainID === leg.trainID) ??
+    trains.find((t) =>
+      t.stops?.some((s) => s.code === leg.from.code && Math.abs(Date.parse(s.scheduled) - Date.parse(leg.from.time)) <= LIVE_MATCH_WINDOW_MS),
+    )
+  );
 }
 
 // --- Reading trips from Firebase (user-written data, so validate it) ---

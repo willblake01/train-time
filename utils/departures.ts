@@ -19,7 +19,8 @@ export interface Departure {
   /** Departure time at the board's station */
   station: StopTime;
   delayMinutes: number;
-  status: 'boarding' | 'delayed' | 'on-time';
+  /** 'scheduled' means timetable only: no live data for this train yet */
+  status: 'boarding' | 'delayed' | 'on-time' | 'scheduled';
   platform: string;
   /** Later stops on this train, with arrival times: where a rider could get off */
   remainingStops: StopTime[];
@@ -85,7 +86,8 @@ export function departuresFromTrains(
     });
   }
 
-  return departures.sort((a, b) => Date.parse(a.station.estimated) - Date.parse(b.station.estimated));
+  // Scheduled order, like a station board: delays show in each row's status
+  return departures.sort((a, b) => Date.parse(a.station.scheduled) - Date.parse(b.station.scheduled));
 }
 
 // Every station served by the given trains, deduped and sorted by name
