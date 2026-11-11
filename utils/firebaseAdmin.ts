@@ -1,5 +1,6 @@
 // Server-only: never import this from a component or page
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getDatabase } from 'firebase-admin/database';
 
 const app =
@@ -15,3 +16,4 @@ const app =
     });
 
 export const adminDb = getDatabase(app);
+export const adminAuth = getAuth(app);

@@ -116,3 +116,66 @@ export const deleteTrip = async (tripId: string) => {
     console.error('Error deleting trip:', e);
   }
 };
+// --- Linked devices (e.g. an LED strip that shows your next train) ---
+
+export interface LinkedDevice {
+  id: string;
+  label: string;
+  createdAt: number;
+}
+
+export const subscribeToDevices = (onChange: (devices: LinkedDevice[]) => void) => {
+  let unsubscribe = () => {};
+  let cancelled = false;
+
+  getUid()
+      .then((uid) => {
+        if (cancelled) return;
+        unsubscribe = onValue(
+            ref(database, `users/${uid}/devices`),
+            (snapshot) => {
+              const value = (snapshot.val() ?? {}) as Record<string, { label?: unknown; createdAt?: unknown }>;
+              const devices = Object.entries(value).map(([id, d]) => ({
+                id,
+                label: typeof d?.label === 'string' ? d.label : 'Device',
+                createdAt: typeof d?.createdAt === 'number' ? d.createdAt : 0,
+              }));
+              onChange(devices.sort((a, b) => a.createdAt - b.createdAt));
+            },
+            (error) => console.error('Error reading devices:', error),
+        );
+      })
+      .catch((error) => console.error('Could not sign in:', error));
+
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+};
+
+// Device tokens are created and revoked by the server, which checks who the
+// rider is from their Firebase ID token
+const devicesRequest = async (method: 'POST' | 'DELETE', init: { query?: string; body?: unknown } = {}) => {
+  await getUid();
+  const idToken = await getAuthInstance().currentUser?.getIdToken();
+  if (!idToken) throw new Error('Not signed in');
+
+  const res = await fetch(`/api/devices${init.query ?? ''}`, {
+    method,
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    ...(init.body !== undefined && { body: JSON.stringify(init.body) }),
+  });
+  if (!res.ok) {
+    const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(error ?? `Request failed (${res.status})`);
+  }
+  return res;
+};
+
+/** Creates a device token. It's returned once and never shown again. */
+export const linkDevice = async (label: string): Promise<{ id: string; label: string; token: string }> =>
+    (await devicesRequest('POST', { body: { label } })).json();
+
+export const unlinkDevice = async (id: string) => {
+  await devicesRequest('DELETE', { query: `?id=${encodeURIComponent(id)}` });
+};

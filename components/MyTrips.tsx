@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import TrainStatusChip from './TrainStatusChip';
+import LinkDeviceDialog from './LinkDeviceDialog';
 
 // Today's date in a time zone, kept current if the page stays open past midnight
 function useToday(timeZone: string) {
@@ -131,6 +132,7 @@ const MyTrips = ({ onAddLeg, activeTripId }: MyTripsProps) => {
   useLiveRefresh();
 
   const { trips } = useTrips();
+  const [linkOpen, setLinkOpen] = useState(false);
 
   // "AUS → FLG", "from AUS", or "to FLG"
   const tripRoute = ({ from, to }: Trip) => {
@@ -186,6 +188,13 @@ const MyTrips = ({ onAddLeg, activeTripId }: MyTripsProps) => {
                   <LegsTable trip={trip} />
                 </Box>
             ))}
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Button size="small" onClick={() => setLinkOpen(true)}>
+                Linked devices
+              </Button>
+            </Box>
+            <LinkDeviceDialog open={linkOpen} onClose={() => setLinkOpen(false)} />
           </CardContent>
         </Card>
       </Box>

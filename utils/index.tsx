@@ -8,3 +8,4 @@ export * from './timetableTypes';
 export * from './trips';
 export * from './useLiveStatus';
 export * from './useTrips';
+export * from './useDevices';
