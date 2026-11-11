@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, onValue, push, ref, remove, serverTimestamp, set } from 'firebase/database';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { type Auth, getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from './firebaseConfig';
 import type { LiveStatus } from './amtrak';
 import { parseTrips, type NewLeg, type Trip } from './trips';
@@ -11,8 +11,10 @@ const app = initializeApp(firebaseConfig);
 // Initialize Realtime Database and get a reference to the service
 const database = getDatabase(app);
 
-// Initialize Firebase Authentication and get a reference to the service
-const auth = getAuth(app);
+let auth: Auth | undefined;
+
+// Created on first use in the browser, so a missing key can't break the build
+const getAuthInstance = () => (auth ??= getAuth(app));
 
 // Every visitor gets a Firebase user ID without a login screen: the first visit
 // signs in anonymously, and Firebase remembers that user in this browser.
@@ -23,13 +25,13 @@ export const getUid = (): Promise<string> => {
   if (!uidPromise) {
     uidPromise = new Promise<string>((resolve, reject) => {
       const unsubscribe = onAuthStateChanged(
-          auth,
+          getAuthInstance(),
           (user) => {
             if (user) {
               unsubscribe();
               resolve(user.uid);
             } else {
-              signInAnonymously(auth).catch((error) => {
+              signInAnonymously(getAuthInstance()).catch((error) => {
                 unsubscribe();
                 reject(error);
               });
