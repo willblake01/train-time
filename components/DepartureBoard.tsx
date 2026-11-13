@@ -63,6 +63,8 @@ interface DepartureBoardProps {
   maxDate?: string;
   /** Only show trains leaving at or after this time (ISO), e.g. the last leg's arrival */
   after?: string;
+  /** Show the loading state without a station or fetching, e.g. while the page decides which station to show */
+  pending?: boolean;
   /** Server-rendered data for the first load; omit to fetch on mount */
   initialDepartures?: Departure[];
   /** Shown under the title while building a trip */
@@ -88,22 +90,25 @@ const DepartureBoard = ({
   minDate,
   maxDate,
   after,
+  pending = false,
   initialDepartures,
   addingTo,
   onSelect,
 }: DepartureBoardProps) => {
-  const [departures, setDepartures] = useState(initialDepartures ?? []);
-  const [status, setStatus] = useState<'ready' | 'loading' | 'error'>(initialDepartures ? 'ready' : 'loading');
+  const [departures, setDepartures] = useState(pending ? [] : (initialDepartures ?? []));
+  const [status, setStatus] = useState<'ready' | 'loading' | 'error'>(initialDepartures && !pending ? 'ready' : 'loading');
 
   // If the station isn't in today's list (e.g. data failed to load), still show it
   const { selected, options } = useMemo(() => {
+    if (pending) return { selected: { code: '', name: '' }, options: stations };
     const match = stations.find((s) => s.code === station);
     const current = match ?? { code: station, name: station };
     return { selected: current, options: match ? stations : [current, ...stations] };
-  }, [stations, station]);
+  }, [stations, station, pending]);
 
   // Keep the board current; refetch on station change and every minute
   useEffect(() => {
+    if (pending) return;
     let cancelled = false;
 
     const params = new URLSearchParams({ station, date, ...(after && { after }) });
@@ -130,7 +135,7 @@ const DepartureBoard = ({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [station, date, after]);
+  }, [station, date, after, pending]);
 
   const columns = onSelect ? 6 : 5;
 
@@ -144,10 +149,11 @@ const DepartureBoard = ({
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
           <Autocomplete
             disableClearable
+            disabled={pending}
             options={options}
             value={selected}
             onChange={(_, option) => onStationChange(option.code)}
-            getOptionLabel={(option) => `${option.name} (${option.code})`}
+            getOptionLabel={(option) => (option.code ? `${option.name} (${option.code})` : '')}
             isOptionEqualToValue={(option, value) => option.code === value.code}
             sx={{ minWidth: { xs: '100%', sm: 320 } }}
             renderInput={(params) => (

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import type { GetStaticProps, InferGetStaticPropsType } from 'next';
 import { Box, Grid } from '@mui/material';
 import AddToTripDialogue from '../components/AddToTripDialogue';
@@ -8,9 +8,13 @@ import MyTrips from '../components/MyTrips';
 import NewTrip from '../components/NewTrip';
 import { type Departure, type StationOption, type NewLeg, type Trip, formatTime, localDate, nextLegStart, useTrips } from '../utils';
 import { getDepartures, getSchedule, getStations, stationToday } from '../utils/amtrakServer';
+import { readSavedStation, saveStation } from '../utils/savedStation';
 
 // A busy hub, so the board always has trains on it when someone visits
 const DEFAULT_STATION = 'CHI';
+
+// The saved station never changes behind our back, so there's nothing to subscribe to
+const noSubscribe = () => () => {};
 
 interface LandingProps {
   stations: StationOption[];
@@ -40,7 +44,18 @@ export const getStaticProps: GetStaticProps<LandingProps> = async () => {
 
 const Landing = ({ stations, today, lastDate, initialDepartures }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { trips } = useTrips();
-  const [boardStation, setBoardStation] = useState(DEFAULT_STATION);
+  // The page is prebuilt for the default station; returning visitors go to the
+  // station they last picked. The server (and hydration) can't see browser
+  // storage, so it reports undefined: the board shows its loading state then,
+  // rather than flashing the default station's trains.
+  const savedStation = useSyncExternalStore(
+    noSubscribe,
+    () => readSavedStation(stations),
+    () => undefined,
+  );
+  const stationChecked = savedStation !== undefined;
+  const [chosenStation, setBoardStation] = useState<string | null>(null);
+  const boardStation = chosenStation ?? savedStation ?? DEFAULT_STATION;
   const [boardDate, setBoardDate] = useState(today);
   // When building a trip: only show trains leaving after the last leg arrives
   const [connection, setConnection] = useState<{ after: string; tz: string } | null>(null);
@@ -55,6 +70,13 @@ const Landing = ({ stations, today, lastDate, initialDepartures }: InferGetStati
   const changeStation = (code: string) => {
     setBoardStation(code);
     setConnection(null);
+  };
+
+  // Only stations picked on the board are remembered, not ones the app moves
+  // the board to while building a trip
+  const pickStation = (code: string) => {
+    saveStation(code);
+    changeStation(code);
   };
 
   const stopAdding = () => {
@@ -113,10 +135,11 @@ const Landing = ({ stations, today, lastDate, initialDepartures }: InferGetStati
           <Grid size={12}>
             <div ref={boardRef} style={{ scrollMarginTop: 16 }}>
               <DepartureBoard
-                key={`${boardStation}|${boardDate}|${connection?.after ?? ''}`}
+                key={stationChecked ? `${boardStation}|${boardDate}|${connection?.after ?? ''}` : 'checking'}
+                pending={!stationChecked}
                 stations={stations}
                 station={boardStation}
-                onStationChange={changeStation}
+                onStationChange={pickStation}
                 date={boardDate}
                 onDateChange={setBoardDate}
                 minDate={today}
